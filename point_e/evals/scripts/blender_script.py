@@ -226,10 +226,7 @@ def create_vertex_color_shaders():
                 bsdf_node = node
         assert bsdf_node is not None, "material has no Principled BSDF node to modify"
 
-        socket_map = {}
-        for input in bsdf_node.inputs:
-            socket_map[input.name] = input
-
+        socket_map = {input.name: input for input in bsdf_node.inputs}
         # Make sure nothing lights the object except for the diffuse color.
         socket_map["Specular"].default_value = 0.0
         socket_map["Roughness"].default_value = 1.0
@@ -244,11 +241,12 @@ def create_vertex_color_shaders():
 
 def create_default_materials():
     for obj in bpy.context.scene.objects.values():
-        if isinstance(obj.data, (bpy.types.Mesh)):
-            if not len(obj.data.materials):
-                mat = bpy.data.materials.new(name="DefaultMaterial")
-                mat.use_nodes = True
-                obj.data.materials.append(mat)
+        if isinstance(obj.data, (bpy.types.Mesh)) and not len(
+            obj.data.materials
+        ):
+            mat = bpy.data.materials.new(name="DefaultMaterial")
+            mat.use_nodes = True
+            obj.data.materials.append(mat)
 
 
 def find_materials():
@@ -265,10 +263,14 @@ def get_socket_value(tree, socket):
     default = socket.default_value
     if not isinstance(default, float):
         default = list(default)
-    for link in tree.links:
-        if link.to_socket == socket:
-            return (link.from_socket, default)
-    return (None, default)
+    return next(
+        (
+            (link.from_socket, default)
+            for link in tree.links
+            if link.to_socket == socket
+        ),
+        (None, default),
+    )
 
 
 def clear_socket_input(tree, socket):
@@ -340,7 +342,7 @@ def setup_nodes(output_path, capturing_material_alpha: bool = False):
     # Create separate file output nodes for every channel we care about.
     # The process calling this script must decide how to recombine these
     # channels, possibly into a single image.
-    for i, channel in enumerate("rgba") if not capturing_material_alpha else [(0, "MatAlpha")]:
+    for i, channel in [(0, "MatAlpha")] if capturing_material_alpha else enumerate("rgba"):
         output_node = tree.nodes.new(type="CompositorNodeOutputFile")
         output_node.base_path = f"{output_path}_{channel}"
         links.new(split_node.outputs[i], output_node.inputs[0])
@@ -366,11 +368,10 @@ def render_scene(output_path, fast_mode: bool):
             bpy.context.scene.eevee.taa_render_samples = 1
         elif bpy.context.scene.render.engine == "CYCLES":
             bpy.context.scene.cycles.samples = 256
-    else:
-        if bpy.context.scene.render.engine == "CYCLES":
-            # We should still impose a per-frame time limit
-            # so that we don't timeout completely.
-            bpy.context.scene.cycles.time_limit = 40
+    elif bpy.context.scene.render.engine == "CYCLES":
+        # We should still impose a per-frame time limit
+        # so that we don't timeout completely.
+        bpy.context.scene.cycles.time_limit = 40
     bpy.context.view_layer.update()
     bpy.context.scene.use_nodes = True
     bpy.context.scene.view_layers["ViewLayer"].use_pass_z = True
@@ -459,8 +460,8 @@ def save_rendering_dataset(
     camera_dist_max: float,
     fast_mode: bool,
 ):
-    assert light_mode in ["random", "uniform", "camera"]
-    assert camera_pose in ["random", "z-circular", "z-circular-elevated"]
+    assert light_mode in {"random", "uniform", "camera"}
+    assert camera_pose in {"random", "z-circular", "z-circular-elevated"}
 
     import_model(input_path)
     bpy.context.scene.render.engine = backend

@@ -41,11 +41,11 @@ DIFFUSION_CONFIGS = {
 def diffusion_from_config(config: Dict[str, Any]) -> GaussianDiffusion:
     schedule = config["schedule"]
     steps = config["timesteps"]
-    respace = config.get("respacing", None)
+    respace = config.get("respacing")
     mean_type = config.get("mean_type", "epsilon")
     betas = get_named_beta_schedule(schedule, steps)
-    channel_scales = config.get("channel_scales", None)
-    channel_biases = config.get("channel_biases", None)
+    channel_scales = config.get("channel_scales")
+    channel_biases = config.get("channel_biases")
     if channel_scales is not None:
         channel_scales = np.array(channel_scales)
     if channel_biases is not None:

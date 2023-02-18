@@ -87,7 +87,9 @@ def marching_cubes_mesh(
         verts=verts,
         faces=faces,
         normals=normals,
-        vertex_channels=None if not fill_vertex_channels else _nearest_vertex_channels(pc, verts),
+        vertex_channels=_nearest_vertex_channels(pc, verts)
+        if fill_vertex_channels
+        else None,
     )
 
 

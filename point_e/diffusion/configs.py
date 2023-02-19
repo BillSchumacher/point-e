@@ -6,10 +6,11 @@ from typing import Any, Dict
 
 import numpy as np
 
+from point_e.diffusion.beta_schedules import get_named_beta_schedule
+
 from .gaussian_diffusion import (
     GaussianDiffusion,
     SpacedDiffusion,
-    get_named_beta_schedule,
     space_timesteps,
 )
 
